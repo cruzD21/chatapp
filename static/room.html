@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <script type="text/javascript">
+        window.onload = function () {
+            var conn;
+            var roomID = "{{ .RoomID}}"
+            var msg = document.getElementById("msg");
+            var log = document.getElementById("log");
+
+            function appendLog(item) {
+                var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
+                log.appendChild(item);
+                if (doScroll) {
+                    log.scrollTop = log.scrollHeight - log.clientHeight;
+                }
+            }
+            function getCurrentTime() {
+                var now = new Date();
+                var hours = now.getHours().toString().padStart(2, '0');
+                var minutes = now.getMinutes().toString().padStart(2, '0');
+                var seconds = now.getSeconds().toString().padStart(2,'0');
+                return `${hours}:${minutes}:${seconds}`;
+            }
+
+            document.getElementById("form").onsubmit = function (event) {
+
+                if (!conn) {
+                    return false;
+                }
+                if (!msg.value) {
+                    return false;
+                }
+                conn.send(msg.value);
+                msg.value = "";
+                return false;
+            };
+
+            if (window["WebSocket"]) {
+                wsPath = "ws://" + document.location.host + "/room/"+ roomID + "/ws";
+                conn = new WebSocket(wsPath);
+                conn.onclose = function (evt) {
+                    var item = document.createElement("div");
+                    item.innerHTML = "<b>Connection closed.</b>";
+                    appendLog(item);
+                };
+                conn.onmessage = function (evt) {
+                    var messages = evt.data.split('\n');
+                    for (var i = 0; i < messages.length; i++) {
+                        var item = document.createElement("div");
+                        item.innerText = getCurrentTime() + messages[i];
+                        appendLog(item);
+                    }
+                };
+            } else {
+                var item = document.createElement("div");
+                item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
+                appendLog(item);
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            color: #444;
+        }
+        .chat-container {
+            width: 80%;
+            max-width: 800px;
+            margin: 50px auto;
+            box-shadow: 0 2px 10px 0 rgba(0,0,0,0.15);
+            background-color: #fff;
+        }
+        .chat-header {
+            padding: 20px;
+            background-color: #007bff;
+            color: #fff;
+        }
+        .chat-body {
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .chat-message {
+            margin-bottom: 15px;
+            line-height: 24px;
+        }
+        .chat-input {
+            padding: 20px;
+            background-color: #f7f7f7;
+            border-top: 1px solid #eee;
+            display: flex;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .chat-input button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>Chat Room - {{.RoomID}}</h1>
+    </div>
+    <div class="chat-body" id="log">
+
+    </div>
+    <form class="chat-input" id="form">
+        <input type="text" id="msg" placeholder="Type your message here..."/>
+        <button>Send</button>
+    </form>
+</div>
+
+
+</body>
+</html>
