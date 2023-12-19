@@ -2,6 +2,8 @@ package chat
 
 import "log"
 
+var Hubs = NewHub()
+
 type Hub struct {
 	Rooms      map[string]*Room
 	Register   chan *Room
