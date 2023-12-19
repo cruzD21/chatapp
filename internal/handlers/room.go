@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	chat "chatapp/pkg/chat"
 	"fmt"
 	guuid "github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -19,12 +20,13 @@ func RoomCreate(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// TODO: fix this name
-func Roomf(w http.ResponseWriter, r *http.Request) {
+func Room(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID := vars["room_id"]
+	uuid, _ := chat.CreateOrGetRoom(roomID)
 
-	p := RoomPage{RoomID: roomID}
+	p := RoomPage{RoomID: uuid}
+
 	t, err := template.ParseFiles("static/room.html")
 	if err != nil {
 		log.Println("error parsing file maybe wrong path", err)

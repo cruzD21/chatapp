@@ -2,6 +2,7 @@ package chat
 
 import (
 	"bytes"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -9,10 +10,10 @@ import (
 )
 
 type Client struct {
-	room *Room
+	Room *Room
 	//hub  *Hub
 	Conn *websocket.Conn
-	send chan []byte
+	Send chan []byte
 }
 
 const (
@@ -41,7 +42,7 @@ var upgrader = websocket.Upgrader{
 
 func (c *Client) readPump() {
 	defer func() {
-		c.room.unregister <- c
+		c.Room.Unregister <- c
 		c.Conn.Close()
 	}()
 
@@ -61,7 +62,7 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- message
+		c.Room.Broadcast <- message
 	}
 }
 
@@ -74,7 +75,7 @@ func (c *Client) writePump() {
 
 	for {
 		select {
-		case message, ok := <-c.send:
+		case message, ok := <-c.Send:
 			if !ok {
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
@@ -86,10 +87,10 @@ func (c *Client) writePump() {
 			w.Write(message)
 
 			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
+			n := len(c.Send)
 			for i := 0; i < n; i++ {
 				w.Write(newline)
-				w.Write(<-c.send)
+				w.Write(<-c.Send)
 			}
 
 			if err := w.Close(); err != nil {
@@ -106,13 +107,21 @@ func (c *Client) writePump() {
 }
 
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	roomID := vars["room_id"]
+	_, room := CreateOrGetRoom(roomID)
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, Conn: conn, send: make(chan []byte, 256)}
-	client.hub.register <- client
+
+	client := &Client{
+		Room: room,
+		Conn: conn,
+		Send: make(chan []byte, 256),
+	}
+	client.Room.Register <- client
 
 	go client.writePump()
 	go client.readPump()

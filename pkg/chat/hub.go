@@ -1,39 +1,31 @@
 package chat
 
+import "log"
+
 type Hub struct {
-	clients    map[string]*Room
-	broadcast  chan []byte
-	register   chan *Room
-	unregister chan *Room
+	Rooms      map[string]*Room
+	Register   chan *Room
+	Unregister chan *Room
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		clients:    make(map[*Client]bool),
-		broadcast:  make(chan []byte),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
+		Rooms:      make(map[string]*Room),
+		Register:   make(chan *Room),
+		Unregister: make(chan *Room),
 	}
 }
 
 func (h *Hub) Run() {
 	for {
 		select {
-		case client := <-h.register:
-			h.clients[client] = true
-		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.send)
-			}
-		case message := <-h.broadcast:
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
+		case room := <-h.Register:
+			h.Rooms[room.ID] = room
+			log.Printf("registered room %s to the hub", room.ID)
+		case room := <-h.Unregister:
+			if _, ok := h.Rooms[room.ID]; ok {
+				log.Printf("unregistering room %s from hub", room.ID)
+				delete(h.Rooms, room.ID)
 			}
 		}
 	}
