@@ -15,7 +15,6 @@ type Room struct {
 }
 
 var (
-	Rooms     map[string]*Room
 	RoomsLock sync.RWMutex
 )
 
@@ -48,14 +47,13 @@ func (r *Room) initRoom() {
 }
 
 func CreateOrGetRoom(uuid string) (string, *Room) {
-
-	if room := Rooms[uuid]; room != nil {
-		return uuid, room
-	}
-
 	RoomsLock.Lock()
 	defer RoomsLock.Unlock()
 
+	if room, exists := Hubs.Rooms[uuid]; exists {
+		log.Println("room already exists after lock")
+		return uuid, room
+	}
 	//room doesn't exist
 	newRoom := &Room{
 		ID:         uuid,
