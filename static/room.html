@@ -53,12 +53,13 @@
                     appendLog(item);
                 };
                 conn.onmessage = function (evt) {
-                    var messages = evt.data.split('\n');
-                    for (var i = 0; i < messages.length; i++) {
-                        var item = document.createElement("div");
-                        item.innerText = getCurrentTime() + messages[i];
-                        appendLog(item);
-                    }
+                    var data = JSON.parse(evt.data)
+                    var message = atob(data.Content)
+                    var user = data.From.UserName
+
+                    var item = document.createElement("div");
+                    item.innerText = getCurrentTime()+ " " + user +": " + message;
+                    appendLog(item);
                 };
             } else {
                 var item = document.createElement("div");

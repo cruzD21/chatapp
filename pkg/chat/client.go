@@ -2,18 +2,21 @@ package chat
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 )
 
 type Client struct {
 	Room *Room
-	//hub  *Hub
+	User UserInfo
 	Conn *websocket.Conn
-	Send chan []byte
+	Send chan Message
 }
 
 const (
@@ -62,7 +65,11 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.Room.Broadcast <- message
+		msg := Message{
+			From:    c.User,
+			Content: message,
+		}
+		c.Room.Broadcast <- msg
 	}
 }
 
@@ -84,16 +91,27 @@ func (c *Client) writePump() {
 			if err != nil {
 				return
 			}
-			w.Write(message)
+			jsonMsg, err := json.Marshal(message)
+			if err != nil {
+				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+			w.Write(jsonMsg)
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.Send)
 			for i := 0; i < n; i++ {
 				w.Write(newline)
-				w.Write(<-c.Send)
+				nextMsg := <-c.Send
+				jsonNextMsg, err := json.Marshal(nextMsg)
+				if err != nil {
+					c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+					return
+				}
+				w.Write(jsonNextMsg)
 			}
 
-			if err := w.Close(); err != nil {
+			if er := w.Close(); er != nil {
 				return
 			}
 
@@ -115,11 +133,17 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	randID := rand.Intn(100)
+	user := UserInfo{
+		ID:       randID,
+		UserName: fmt.Sprintf("USER%d", randID),
+	}
 
 	client := &Client{
 		Room: room,
+		User: user,
 		Conn: conn,
-		Send: make(chan []byte, 256),
+		Send: make(chan Message, 256),
 	}
 	client.Room.Register <- client
 

@@ -9,13 +9,12 @@ type Room struct {
 	ID         string
 	Hub        *Hub
 	Members    map[*Client]bool
-	Broadcast  chan []byte
+	Broadcast  chan Message
 	Register   chan *Client
 	Unregister chan *Client
 }
 
 var (
-	Rooms     map[string]*Room
 	RoomsLock sync.RWMutex
 )
 
@@ -48,20 +47,19 @@ func (r *Room) initRoom() {
 }
 
 func CreateOrGetRoom(uuid string) (string, *Room) {
-
-	if room := Rooms[uuid]; room != nil {
-		return uuid, room
-	}
-
 	RoomsLock.Lock()
 	defer RoomsLock.Unlock()
 
+	if room, exists := Hubs.Rooms[uuid]; exists {
+		log.Println("room already exists after lock")
+		return uuid, room
+	}
 	//room doesn't exist
 	newRoom := &Room{
 		ID:         uuid,
 		Hub:        Hubs,
 		Members:    make(map[*Client]bool),
-		Broadcast:  make(chan []byte),
+		Broadcast:  make(chan Message),
 		Unregister: make(chan *Client),
 		Register:   make(chan *Client),
 	}
