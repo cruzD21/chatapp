@@ -59,6 +59,7 @@ func CreateOrGetRoom(uuid string) (string, *Room) {
 	//room doesn't exist
 	newRoom := &Room{
 		ID:         uuid,
+		Hub:        Hubs,
 		Members:    make(map[*Client]bool),
 		Broadcast:  make(chan []byte),
 		Unregister: make(chan *Client),
