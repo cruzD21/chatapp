@@ -3,9 +3,11 @@ package chat
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -131,9 +133,15 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	randID := rand.Intn(100)
+	user := UserInfo{
+		ID:       randID,
+		UserName: fmt.Sprintf("USER%d", randID),
+	}
 
 	client := &Client{
 		Room: room,
+		User: user,
 		Conn: conn,
 		Send: make(chan Message, 256),
 	}

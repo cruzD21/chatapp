@@ -1,7 +1,7 @@
 package chat
 
 type UserInfo struct {
-	ID       string
+	ID       int
 	UserName string
 }
 
