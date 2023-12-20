@@ -38,6 +38,10 @@
     <h1>Welcome to ChatApp</h1>
     <p>Connect with people around the world.</p>
     <button class="button" id="createRoom">Create a Chat Room</button>
+    <label>
+        <input type="text" id="joinRoom"/>
+        <button type="submit" onclick="joinRoom()">Join Room</button>
+    </label>
 </div>
 
 <script>
@@ -46,6 +50,12 @@
         // This could be navigating to a new page or making an API call to create a room.
         window.location.href = '/room/create'; // Example: Navigate to the room creation endpoint
     };
+    function joinRoom(){
+        var roomID = document.getElementById('joinRoom').value
+        window.location.href = `/room/${roomID}`
+    }
+
+
 </script>
 
 </body>
