@@ -1,7 +1,6 @@
 package chat
 
 import (
-	s "chatapp/internal/server"
 	"log"
 	"sync"
 )
@@ -60,12 +59,13 @@ func CreateOrGetRoom(uuid string) (string, *Room) {
 	//room doesn't exist
 	newRoom := &Room{
 		ID:         uuid,
+		Hub:        Hubs,
 		Members:    make(map[*Client]bool),
 		Broadcast:  make(chan []byte),
 		Unregister: make(chan *Client),
 		Register:   make(chan *Client),
 	}
-	s.Hub.Register <- newRoom
+	Hubs.Register <- newRoom
 	go newRoom.initRoom()
 
 	return uuid, newRoom

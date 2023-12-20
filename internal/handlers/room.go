@@ -15,8 +15,9 @@ type RoomPage struct {
 }
 
 func RoomCreate(w http.ResponseWriter, r *http.Request) {
+
 	url := fmt.Sprintf("/room/%s", guuid.New().String())
-	http.Redirect(w, r, url, http.StatusMovedPermanently)
+	http.Redirect(w, r, url, http.StatusFound)
 	return
 }
 

@@ -11,6 +11,10 @@
             var msg = document.getElementById("msg");
             var log = document.getElementById("log");
 
+            document.getElementById("exit").onclick = function() {
+                window.location.href = '/'
+            }
+
             function appendLog(item) {
                 var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
                 log.appendChild(item);
@@ -40,9 +44,10 @@
             };
 
             if (window["WebSocket"]) {
-                wsPath = "ws://" + document.location.host + "/room/"+ roomID + "/ws";
+                let wsPath = "ws://" + document.location.host + "/room/"+ roomID + "/ws";
                 conn = new WebSocket(wsPath);
                 conn.onclose = function (evt) {
+                    console.log("closing websocket", wsPath)
                     var item = document.createElement("div");
                     item.innerHTML = "<b>Connection closed.</b>";
                     appendLog(item);
@@ -130,7 +135,6 @@
         <button>Send</button>
     </form>
 </div>
-
-
+<button id="exit">close room</button>
 </body>
 </html>
